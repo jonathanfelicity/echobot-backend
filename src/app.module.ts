@@ -6,7 +6,10 @@ import { UsersModule } from './users/users.module';
 import { RequestsService } from './requests/requests.service';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { CacheInterceptor } from '@nestjs/cache-manager';
+import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+import { HttpModule } from '@nestjs/axios';
+import { PostsModule } from './posts/posts.module';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
   imports: [
@@ -20,7 +23,14 @@ import { CacheInterceptor } from '@nestjs/cache-manager';
         limit: 10,
       },
     ]),
+    CacheModule.register({
+      ttl: 5,
+      max: 100,
+    }),
+    HttpModule,
     UsersModule,
+    PostsModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [

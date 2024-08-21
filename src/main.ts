@@ -10,13 +10,13 @@ async function bootstrap() {
   app.use(helmet());
   app.enableCors();
   const config = new DocumentBuilder()
-    .setTitle('Syncship API  docs')
-    .setDescription('Syncship API documentation')
+    .setTitle('EchoBot API  docs')
+    .setDescription('EchoBot API documentation')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
-  await app.listen(3000);
+  await app.listen(process.env.PORT ?? 8080);
 }
 bootstrap();

@@ -10,14 +10,14 @@ import { AxiosResponse } from 'axios';
  * Provides methods for making GET, POST, and PUT requests.
  * Headers, base URL, and other options are configurable.
  */
-export class RequestService {
+export class RequestsService {
   private readonly logger: Logger;
 
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.logger = new Logger(RequestService.name);
+    this.logger = new Logger(RequestsService.name);
   }
 
   /**
