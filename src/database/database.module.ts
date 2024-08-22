@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { CacheModule } from '@nestjs/cache-manager';
+import FactoryService from './factory.service';
+import SeedingService from './seeding.service';
+import { RequestsModule } from 'src/requests/requests.module';
 /**
  * The database module that handles connecting to the database.
  */
@@ -15,8 +18,9 @@ import { CacheModule } from '@nestjs/cache-manager';
         port: parseInt(process.env.REDIS_PORT),
       },
     }),
+    RequestsModule,
   ],
-  providers: [PrismaService],
-  exports: [PrismaService],
+  providers: [PrismaService, FactoryService, SeedingService],
+  exports: [PrismaService, FactoryService, SeedingService],
 })
 export class DatabaseModule {}

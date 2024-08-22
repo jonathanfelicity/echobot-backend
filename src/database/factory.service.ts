@@ -1,27 +1,7 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RequestsService } from 'src/requests/requests.service';
-
-interface User {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-}
-
-interface Post {
-  id: number;
-  title: string;
-  body: string;
-}
-
-interface Comment {
-  id: number;
-  postId: number;
-  name: string;
-  body: string;
-  email: string;
-}
+import { User, Comment, Post } from '@prisma/client';
 
 @Injectable()
 export default class FactoryService {
@@ -41,7 +21,7 @@ export default class FactoryService {
    * @param {number} count - The number of users to generate.
    * @returns {Promise<User[]>} - A promise containing the user data.
    */
-  async generateUser(): Promise<User[]> {
+  async generateUser(): Promise<any[]> {
     try {
       let users: User[] = [];
       const fetchCount = Math.ceil(500 / 10);

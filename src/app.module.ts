@@ -3,13 +3,15 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { UsersModule } from './users/users.module';
-import { RequestsService } from './requests/requests.service';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
-import { HttpModule } from '@nestjs/axios';
 import { PostsModule } from './posts/posts.module';
 import { CommentsModule } from './comments/comments.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CronJobsService } from './cron-jobs/cron-jobs.service';
+import { RequestsModule } from './requests/requests.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
@@ -27,10 +29,12 @@ import { CommentsModule } from './comments/comments.module';
       ttl: 5,
       max: 100,
     }),
-    HttpModule,
+    ScheduleModule.forRoot(),
+    DatabaseModule,
     UsersModule,
     PostsModule,
     CommentsModule,
+    RequestsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -44,7 +48,7 @@ import { CommentsModule } from './comments/comments.module';
       useClass: ThrottlerGuard,
     },
     AppService,
-    RequestsService,
+    CronJobsService,
   ],
 })
 export class AppModule {}
