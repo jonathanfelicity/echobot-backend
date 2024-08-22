@@ -2,9 +2,13 @@ import { Module } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { CacheModule } from '@nestjs/cache-manager';
 import FactoryService from './factory.service';
-import SeedingService from './seeding.service';
+import { SeederService } from './seeder.service';
 import { RequestsModule } from 'src/requests/requests.module';
 import { CounterService } from 'src/counter/counter.service';
+import { UserSeedProcessor } from './seeders/user-seed-processor';
+import { PostSeedProcessor } from './seeders/post-seed-processor';
+import { CommentSeedProcessor } from './seeders/comment-seed-processor';
+import { BullModule } from '@nestjs/bullmq';
 /**
  * The database module that handles connecting to the database.
  */
@@ -19,9 +23,22 @@ import { CounterService } from 'src/counter/counter.service';
         port: parseInt(process.env.REDIS_PORT),
       },
     }),
+    BullModule.registerQueue(
+      { name: 'user-seed' },
+      { name: 'post-seed' },
+      { name: 'comment-seed' },
+    ),
     RequestsModule,
   ],
-  providers: [PrismaService, CounterService, FactoryService, SeedingService],
-  exports: [PrismaService, FactoryService, SeedingService],
+  providers: [
+    PrismaService,
+    CounterService,
+    FactoryService,
+    SeederService,
+    UserSeedProcessor,
+    PostSeedProcessor,
+    CommentSeedProcessor,
+  ],
+  exports: [PrismaService, FactoryService, SeederService],
 })
 export class DatabaseModule {}

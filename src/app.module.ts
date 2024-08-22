@@ -13,7 +13,6 @@ import { CronJobsService } from './cron-jobs/cron-jobs.service';
 import { RequestsModule } from './requests/requests.module';
 import { DatabaseModule } from './database/database.module';
 import { BullModule } from '@nestjs/bullmq';
-// import { CounterService } from './counter/counter.service';
 
 @Module({
   imports: [

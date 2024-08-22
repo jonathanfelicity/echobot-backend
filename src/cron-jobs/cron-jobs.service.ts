@@ -1,20 +1,30 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import FactoryService from 'src/database/factory.service';
+import { SeederService } from 'src/database/seeder.service';
 
 @Injectable()
 export class CronJobsService {
   private readonly logger: Logger;
 
-  constructor(private readonly factoryService: FactoryService) {
+  constructor(private readonly seederService: SeederService) {
     this.logger = new Logger(CronJobsService.name);
   }
 
-  //   EVERY_HOUR
   @Cron(CronExpression.EVERY_10_SECONDS)
   async handleCron() {
-    const users = await this.factoryService.generateUsers();
-    console.log(users);
-    this.logger.debug('performed cron job');
+    this.logger.debug('Starting user seeding job...');
+    try {
+      // Define the number of users to seed
+      const userCount = 500;
+      await this.seederService.seedUsers(userCount);
+      this.logger.debug(
+        `User seeding job added to the queue with ${userCount} users.`,
+      );
+    } catch (error) {
+      this.logger.error(
+        'Failed to add user seeding job to the queue',
+        error.stack,
+      );
+    }
   }
 }

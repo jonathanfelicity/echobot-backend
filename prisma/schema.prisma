@@ -101,7 +101,7 @@ model Comment {
 }
 
 model Counter {
-  id     Int    @id @default(autoincrement())
+  id     String    @id @default(cuid())
   entity String @unique
   count  Int    @default(0)
 
