@@ -18,6 +18,39 @@ export class CommentsService {
   }
 
   /**
+   * Bulk creates comments in the database.
+   * @param {CreateCommentDto[]} comments - The array of comment data to be created.
+   * @returns {Promise<Comment[]>} - The created comments.
+   */
+  async bulkCreate(comments: CreateCommentDto[]): Promise<Comment[]> {
+    const createdComments: Comment[] = [];
+    const batchSize = 100; // Adjust batch size as needed
+
+    for (let i = 0; i < comments.length; i += batchSize) {
+      const batch = comments.slice(i, i + batchSize);
+
+      try {
+        const newComments = await Promise.all(
+          batch.map((comment) =>
+            this.prisma.comment.create({
+              data: { ...comment },
+            }),
+          ),
+        );
+        createdComments.push(...newComments);
+      } catch (error) {
+        this.logger.error(
+          `Failed to create a batch of comments: ${error.message}`,
+        );
+        // Handle error for the batch and continue processing other batches
+        this.handlePrismaError(error, 'bulkCreate');
+      }
+    }
+
+    return createdComments;
+  }
+
+  /**
    * Creates a new comment in the database.
    * @param {Comment} comment - The comment data to be created.
    * @returns {Promise<Comment>} - The created comment.

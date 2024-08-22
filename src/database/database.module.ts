@@ -4,6 +4,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import FactoryService from './factory.service';
 import SeedingService from './seeding.service';
 import { RequestsModule } from 'src/requests/requests.module';
+import { CounterService } from 'src/counter/counter.service';
 /**
  * The database module that handles connecting to the database.
  */
@@ -20,7 +21,7 @@ import { RequestsModule } from 'src/requests/requests.module';
     }),
     RequestsModule,
   ],
-  providers: [PrismaService, FactoryService, SeedingService],
+  providers: [PrismaService, CounterService, FactoryService, SeedingService],
   exports: [PrismaService, FactoryService, SeedingService],
 })
 export class DatabaseModule {}

@@ -18,6 +18,41 @@ export class PostsService {
   }
 
   /**
+   * Bulk creates posts in the database.
+   * @param {CreatePostDto[]} posts - The array of post data to be created.
+   * @returns {Promise<Post[]>} - The created posts.
+   */
+  async bulkCreate(posts: CreatePostDto[]): Promise<Post[]> {
+    const createdPosts: Post[] = [];
+    const batchSize = 100; // Adjust batch size as needed
+
+    for (let i = 0; i < posts.length; i += batchSize) {
+      const batch = posts.slice(i, i + batchSize);
+
+      try {
+        const newPosts = await Promise.all(
+          batch.map((post) =>
+            this.prisma.post.create({
+              data: { ...post },
+            }),
+          ),
+        );
+        createdPosts.push(...newPosts);
+      } catch (error) {
+        this.logger.error(
+          `Failed to create a batch of posts: ${error.message}`,
+          error.stack,
+          { batch },
+        );
+        // Handle error for the batch and continue processing other batches
+        this.handlePrismaError(error, 'bulkCreate', { batch });
+      }
+    }
+
+    return createdPosts;
+  }
+
+  /**
    * Creates a new post in the database.
    * @param {Post} post - The post data to be created.
    * @returns {Promise<Post>} - The created post.

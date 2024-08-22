@@ -35,10 +35,10 @@ model User {
 }
 
 model Company {
-  id          String @id @default(cuid())
-  name        String
+  id           String @id @default(cuid())
+  name         String
   catch_phrase String
-  bs          String
+  bs           String
 
   user_id String @unique
   user    User   @relation(fields: [user_id], references: [id])
@@ -72,9 +72,9 @@ model Post {
   id        String    @id @default(cuid())
   title     String    @unique
   body      String
-  published Boolean?   @default(true)
-  user_id String
-  user    User      @relation(fields: [user_id], references: [id])
+  published Boolean?  @default(true)
+  user_id   String
+  user      User      @relation(fields: [user_id], references: [id])
   comments  Comment[]
 
   created_at DateTime @default(now())
@@ -98,4 +98,17 @@ model Comment {
 
   @@index([name, email])
   @@map("comments")
+}
+
+model Counter {
+  id     Int    @id @default(autoincrement())
+  entity String @unique
+  count  Int    @default(0)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+
+  @@map("counters")
+  @@index([entity, count])
 }

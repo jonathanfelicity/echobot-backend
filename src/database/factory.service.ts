@@ -2,6 +2,7 @@ import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RequestsService } from 'src/requests/requests.service';
 import { User, Comment, Post } from '@prisma/client';
+import { CounterService } from 'src/counter/counter.service';
 
 @Injectable()
 export default class FactoryService {
@@ -11,20 +12,23 @@ export default class FactoryService {
   constructor(
     private readonly requestsService: RequestsService,
     private readonly configService: ConfigService,
+    private readonly counterService: CounterService,
   ) {
     this.logger = new Logger(FactoryService.name);
     this.baseUrl = this.configService.get<string>('JSONPLACEHOLDER_BASE_URL');
   }
 
   /**
-   * Generates users from the API.
-   * @param {number} count - The number of users to generate.
-   * @returns {Promise<User[]>} - A promise containing the user data.
+   * Generates a list of `User` instances with unique IDs and other unique properties.
+   *
+   * @param count - The number of `User` instances to generate.
+   * @returns A Promise that resolves to an array of `User` instances.
    */
-  async generateUser(): Promise<any[]> {
+  async generateUsers(count: number = 500): Promise<any[]> {
     try {
       let users: User[] = [];
-      const fetchCount = Math.ceil(500 / 10);
+      const fetchCount = Math.ceil(count / 10); // Adjust to fetch the required number of users
+      const currentCount = await this.counterService.getCurrentCount('User');
 
       for (let i = 0; i < fetchCount; i++) {
         const response = await this.requestsService.get<User[]>(
@@ -34,14 +38,17 @@ export default class FactoryService {
       }
 
       // Ensure uniqueness by modifying the users
-      const uniqueUsers = users.map((user, index) => ({
+      const uniqueUsers = users.slice(0, count).map((user, index) => ({
         ...user,
-        id: index + 1, // Unique ID
-        username: `${user.username}_${index + 1}`, // Unique username
-        email: `${user.email.split('@')[0]}_${index + 1}@${user.email.split('@')[1]}`, // Unique email
+        id: currentCount + index + 1, // Unique ID
+        username: `${user.username}_${currentCount + index + 1}`,
+        email: `${user.email.split('@')[0]}_${currentCount + index + 1}@${user.email.split('@')[1]}`, // Unique email
       }));
 
-      return uniqueUsers.slice(0, 500); // Return exactly 500 users
+      // Update the count in the Counter table
+      await this.counterService.incrementCount('User', uniqueUsers.length);
+
+      return uniqueUsers; // Return exactly the number of requested users
     } catch (error) {
       this.logger.error(`Failed to fetch users: ${error.message}`);
       throw new HttpException(
@@ -52,35 +59,67 @@ export default class FactoryService {
   }
 
   /**
-   * Generates posts from the API.
-   * @param {number} count - The number of posts to generate.
-   * @returns {Promise<Post[]>} - A promise containing the post data.
+   * Generates a list of `Post` instances with unique IDs and other unique properties.
+   *
+   * @param count - The number of `Post` instances to generate.
+   * @returns A Promise that resolves to an array of `Post` instances.
    */
-  async generatePost(count?: number): Promise<Post[]> {
-    return this.fetchData<Post>(`${this.baseUrl}/posts`, count);
+  async generatePosts(count: number = 500): Promise<Post[]> {
+    return this.generateItemsWithCount<Post>(
+      'Post',
+      `${this.baseUrl}/posts`,
+      count,
+    );
   }
 
   /**
-   * Generates comments from the API.
-   * @param {number} count - The number of comments to generate.
-   * @returns {Promise<Comment[]>} - A promise containing the comment data.
+   * Generates a list of `Comment` instances with unique IDs and other unique properties.
+   *
+   * @param count - The number of `Comment` instances to generate.
+   * @returns A Promise that resolves to an array of `Comment` instances.
    */
-  async generateComment(count?: number): Promise<Comment[]> {
-    return this.fetchData<Comment>(`${this.baseUrl}/comments`, count);
+  async generateComments(count: number = 500): Promise<Comment[]> {
+    return this.generateItemsWithCount<Comment>(
+      'Comment',
+      `${this.baseUrl}/comments`,
+      count,
+    );
   }
 
   /**
-   * Fetches data from the given URL.
-   * @param {string} url - The URL to fetch data from.
-   * @param {number} [count] - The number of items to return.
-   * @returns {Promise<T[]>} - A promise containing the fetched data.
+   * Generates a list of items of type `T` with unique IDs and other unique properties.
+   *
+   * @param entity - The name of the entity being generated (e.g. 'Post', 'Comment').
+   * @param url - The URL to fetch the items from.
+   * @param count - The number of items to generate.
+   * @returns A Promise that resolves to an array of `T` instances.
    */
-  private async fetchData<T>(url: string, count?: number): Promise<T[]> {
+  private async generateItemsWithCount<T>(
+    entity: string,
+    url: string,
+    count: number,
+  ): Promise<T[]> {
     try {
-      const response = await this.requestsService.get<T[]>(url);
-      const data = response.data;
+      const currentCount = await this.counterService.getCurrentCount(entity);
+      let data: T[] = [];
+      const fetchCount = Math.ceil(count / 10); // Adjust to fetch the required number of items
 
-      return count ? data.slice(0, count) : data;
+      for (let i = 0; i < fetchCount; i++) {
+        const response = await this.requestsService.get<T[]>(url);
+        data = data.concat(response.data);
+      }
+
+      // Ensure uniqueness by modifying the items
+      const uniqueData = data.slice(0, count).map((item, index) => ({
+        ...item,
+        id: currentCount + index + 1, // Ensure unique ID
+        // Modify other fields to ensure uniqueness if needed
+      }));
+
+      // Update the count in the Counter table
+      await this.counterService.incrementCount(entity, uniqueData.length);
+
+      return uniqueData; // Return exactly the number of requested items
     } catch (error) {
       this.logger.error(`Failed to fetch data from ${url}: ${error.message}`);
       throw new HttpException(

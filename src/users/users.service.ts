@@ -18,45 +18,45 @@ export class UsersService {
   }
 
   /**
+   * Bulk creates multiple users in the database.
+   *
+   * @param users - An array of `CreateUserDto` objects representing the users to be created.
+   * @returns A Promise that resolves to an array of `User` objects representing the newly created users.
+   */
+  async bulkCreate(users: CreateUserDto[]): Promise<User[]> {
+    try {
+      this.logger.log('Starting bulk user creation');
+      const newUsers = await this.prisma.user.createMany({
+        data: users.map((user) => this.buildCreatePayload(user)),
+      });
+      this.logger.log(`Successfully created ${newUsers.count} users`);
+      return this.prisma.user.findMany({
+        where: {
+          email: {
+            in: users.map((user) => user.email),
+          },
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Bulk user creation failed: ${error.message}`,
+        error.stack,
+      );
+      this.handlePrismaError(error, 'bulkCreate');
+    }
+  }
+
+  /**
    * Creates a new user in the database.
-   * @param {CreateUserDto} user - The user data to be created.
-   * @returns {Promise<User>} - The created user.
+   *
+   * @param user - A `CreateUserDto` object containing the data for the new user.
+   * @returns A Promise that resolves to the newly created `User` object.
    */
   async create(user: CreateUserDto): Promise<User> {
     try {
       this.logger.log(`Creating a new user with email: ${user.email}`);
-      const payload = {
-        name: user.name,
-        username: user.username,
-        email: user.email,
-        phone: user.phone,
-        website: user.website,
-        address: user.address
-          ? {
-              create: {
-                street: user.address.street,
-                suite: user.address.suite,
-                city: user.address.city,
-                zipcode: user.address.zipcode,
-                geo: {
-                  lat: user.address.geo.lat,
-                  lng: user.address.geo.lng,
-                },
-              },
-            }
-          : undefined,
-        company: user.company
-          ? {
-              create: {
-                name: user.company.name,
-                catch_phrase: user.company.catch_phrase,
-                bs: user.company.bs,
-              },
-            }
-          : undefined,
-      };
       const createdUser = await this.prisma.user.create({
-        data: payload,
+        data: this.buildCreatePayload(user),
       });
       this.logger.log(`User created successfully with ID: ${createdUser.id}`);
       return createdUser;
@@ -67,7 +67,8 @@ export class UsersService {
 
   /**
    * Fetches all users from the database.
-   * @returns {Promise<User[]>} - An array of users.
+   *
+   * @returns A Promise that resolves to an array of `User` objects representing all users in the database.
    */
   async findAll(): Promise<User[]> {
     try {
@@ -81,16 +82,15 @@ export class UsersService {
   }
 
   /**
-   * Fetches a single user by ID.
-   * @param {string} id - The ID of the user.
-   * @returns {Promise<User>} - The fetched user or throws NotFoundException if not found.
+   * Fetches a single user from the database by their unique identifier.
+   *
+   * @param id - The unique identifier of the user to fetch.
+   * @returns A Promise that resolves to the `User` object with the specified ID, or throws a `NotFoundException` if the user is not found.
    */
   async findOne(id: string): Promise<User> {
     try {
       this.logger.log(`Fetching user with ID: ${id}`);
-      const user = await this.prisma.user.findUnique({
-        where: { id },
-      });
+      const user = await this.prisma.user.findUnique({ where: { id } });
       if (!user) {
         this.logger.warn(`User not found with ID: ${id}`);
         throw new NotFoundException(`User with ID ${id} not found`);
@@ -103,14 +103,15 @@ export class UsersService {
 
   /**
    * Updates an existing user in the database.
-   * @param {string} id - The ID of the user to be updated.
-   * @param {UpdateUserDto} user - The updated user data.
-   * @returns {Promise<User>} - The updated user.
+   *
+   * @param id - The unique identifier of the user to update.
+   * @param user - The updated user data to apply.
+   * @returns A Promise that resolves to the updated `User` object.
    */
   async update(id: string, user: UpdateUserDto): Promise<User> {
     try {
       this.logger.log(`Updating user with ID: ${id}`);
-      const payload = this.buildUpdateData(user);
+      const payload = this.buildUpdatePayload(user);
       const updatedUser = await this.prisma.user.update({
         where: { id },
         data: payload,
@@ -123,16 +124,15 @@ export class UsersService {
   }
 
   /**
-   * Deletes a user from the database.
-   * @param {string} id - The ID of the user to be deleted.
-   * @returns {Promise<User>} - The deleted user.
+   * Deletes a user from the database by their unique identifier.
+   *
+   * @param id - The unique identifier of the user to delete.
+   * @returns A Promise that resolves to the deleted `User` object.
    */
   async remove(id: string): Promise<User> {
     try {
       this.logger.log(`Deleting user with ID: ${id}`);
-      const deletedUser = await this.prisma.user.delete({
-        where: { id },
-      });
+      const deletedUser = await this.prisma.user.delete({ where: { id } });
       this.logger.log(`User deleted successfully with ID: ${id}`);
       return deletedUser;
     } catch (error) {
@@ -141,11 +141,14 @@ export class UsersService {
   }
 
   /**
-   * Handles errors for Prisma operations and logs them accordingly.
-   * @param {any} error - The error object.
-   * @param {string} operation - The name of the operation being performed.
-   * @param {object} [context] - Additional context for logging.
-   * @throws {InternalServerErrorException} - Throws an internal server error after logging.
+   * Handles Prisma-related errors that occur during user operations.
+   *
+   * This method logs the error and context, and throws an appropriate exception based on the error code.
+   *
+   * @param error - The error object that was thrown.
+   * @param operation - The name of the operation that failed (e.g. 'create', 'update', 'delete').
+   * @param context - An optional object containing additional context information about the error.
+   * @throws InternalServerErrorException - If the error is a Prisma client known request error with code 'P2002' (unique constraint failed), or for any other Prisma-related error.
    */
   private handlePrismaError(
     error: any,
@@ -157,65 +160,99 @@ export class UsersService {
       error.stack,
       { context },
     );
+
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      // Handle known Prisma errors here (e.g., P2002 for unique constraint violations)
-      throw new InternalServerErrorException(
-        `Prisma error occurred during ${operation}`,
-      );
+      if (error.code === 'P2002') {
+        throw new InternalServerErrorException(
+          'Unique constraint failed on the field(s)',
+        );
+      }
     }
+
     throw new InternalServerErrorException(`Failed to ${operation} user`);
   }
 
   /**
-   * Builds an update data object from a user object, including updates to top-level fields, address, and company.
-   * @param {UpdateUserDto} user - The user object containing the updates.
-   * @returns {object} - The update data object.
+   * Builds the create payload for a new user based on the provided `CreateUserDto`.
+   *
+   * @param user - The `CreateUserDto` object containing the user data to create.
+   * @returns A `Prisma.UserCreateInput` object representing the user data to be created in the database.
    */
-  private buildUpdateData(user: UpdateUserDto): any {
+  private buildCreatePayload(user: CreateUserDto): Prisma.UserCreateInput {
+    return {
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      phone: user.phone,
+      website: user.website,
+      address: user.address
+        ? {
+            create: {
+              street: user.address.street,
+              suite: user.address.suite,
+              city: user.address.city,
+              zipcode: user.address.zipcode,
+              geo: {
+                lat: user.address.geo.lat,
+                lng: user.address.geo.lng,
+              },
+            },
+          }
+        : undefined,
+      company: user.company
+        ? {
+            create: {
+              name: user.company.name,
+              catch_phrase: user.company.catch_phrase,
+              bs: user.company.bs,
+            },
+          }
+        : undefined,
+    };
+  }
+
+  /**
+   * Builds the update payload for an existing user based on the provided user data.
+   *
+   * @param user - The user data object containing the fields to update.
+   * @returns A `Prisma.UserUpdateInput` object representing the user data to be updated in the database.
+   */
+  private buildUpdatePayload(user: any): Prisma.UserUpdateInput {
     const updateData: any = {};
 
-    // Add top-level fields if present
-    if (user.name !== undefined) updateData.name = user.name;
-    if (user.username !== undefined) updateData.username = user.username;
-    if (user.email !== undefined) updateData.email = user.email;
-    if (user.phone !== undefined) updateData.phone = user.phone;
-    if (user.website !== undefined) updateData.website = user.website;
+    if (user.name) updateData.name = user.name;
+    if (user.username) updateData.username = user.username;
+    if (user.email) updateData.email = user.email;
+    if (user.phone) updateData.phone = user.phone;
+    if (user.website) updateData.website = user.website;
 
-    // Add address update if present
     if (user.address) {
       updateData.address = {
         update: {},
       };
-      if (user.address.street !== undefined)
+      if (user.address.street)
         updateData.address.update.street = user.address.street;
-      if (user.address.suite !== undefined)
+      if (user.address.suite)
         updateData.address.update.suite = user.address.suite;
-      if (user.address.city !== undefined)
-        updateData.address.update.city = user.address.city;
-      if (user.address.zipcode !== undefined)
+      if (user.address.city) updateData.address.update.city = user.address.city;
+      if (user.address.zipcode)
         updateData.address.update.zipcode = user.address.zipcode;
       if (user.address.geo) {
         updateData.address.update.geo = {
-          update: {},
+          lat: updateData.address.geo.lat,
+          lng: updateData.address.geo.lng,
         };
-        if (user.address.geo.lat !== undefined)
-          updateData.address.update.geo.update.lat = user.address.geo.lat;
-        if (user.address.geo.lng !== undefined)
-          updateData.address.update.geo.update.lng = user.address.geo.lng;
       }
     }
 
-    // Add company update if present
     if (user.company) {
       updateData.company = {
         update: {},
       };
-      if (user.company.name !== undefined)
-        updateData.company.update.name = user.company.name;
-      if (user.company.catch_phrase !== undefined)
+      if (user.company.name) updateData.company.update.name = user.company.name;
+      if (user.company.catch_phrase)
         updateData.company.update.catch_phrase = user.company.catch_phrase;
-      if (user.company.bs !== undefined)
-        updateData.company.update.bs = user.company.bs;
+      if (user.company.bs) updateData.company.update.bs = user.company.bs;
     }
 
     return updateData;

@@ -79,6 +79,19 @@ CREATE TABLE `comments` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `counters` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `entity` VARCHAR(191) NOT NULL,
+    `count` INTEGER NOT NULL DEFAULT 0,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `counters_entity_key`(`entity`),
+    INDEX `counters_entity_count_idx`(`entity`, `count`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `_CommentToUser` (
     `A` VARCHAR(191) NOT NULL,
     `B` VARCHAR(191) NOT NULL,

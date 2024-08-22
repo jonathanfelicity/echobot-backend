@@ -10,8 +10,11 @@ export class CronJobsService {
     this.logger = new Logger(CronJobsService.name);
   }
 
+  //   EVERY_HOUR
   @Cron(CronExpression.EVERY_10_SECONDS)
-  handleCron() {
+  async handleCron() {
+    const users = await this.factoryService.generateUsers();
+    console.log(users);
     this.logger.debug('performed cron job');
   }
 }
