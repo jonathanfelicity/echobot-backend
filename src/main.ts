@@ -3,9 +3,11 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
+import { DisableMethodsMiddleware } from './middleware/disable-methods/disable-methods.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(new DisableMethodsMiddleware().use);
   app.useGlobalPipes(new ValidationPipe());
   app.use(helmet());
   app.enableCors();
