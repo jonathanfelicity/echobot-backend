@@ -70,10 +70,20 @@ export class UsersService {
    *
    * @returns A Promise that resolves to an array of `User` objects representing all users in the database.
    */
-  async findAll(): Promise<User[]> {
+  async findAll(page = 1, limit = 10): Promise<User[]> {
     try {
       this.logger.log('Fetching all users');
-      const users = await this.prisma.user.findMany();
+
+      const skip = (page - 1) * limit;
+      const take = limit;
+      const users = await this.prisma.user.findMany({
+        skip,
+        take,
+        include: {
+          address: true,
+          company: true,
+        },
+      });
       this.logger.log(`Fetched ${users.length} users`);
       return users;
     } catch (error) {

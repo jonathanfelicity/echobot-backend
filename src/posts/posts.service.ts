@@ -74,10 +74,15 @@ export class PostsService {
    * Fetches all posts from the database.
    * @returns {Promise<Post[]>} - An array of posts.
    */
-  async findAll(): Promise<Post[]> {
+  async findAll(page = 1, limit = 10): Promise<Post[]> {
     try {
       this.logger.log('Fetching all posts');
-      const posts = await this.prisma.post.findMany();
+      const skip = (page - 1) * limit;
+      const take = limit;
+      const posts = await this.prisma.post.findMany({
+        skip,
+        take,
+      });
       this.logger.log(`Fetched ${posts.length} posts`);
       return posts;
     } catch (error) {

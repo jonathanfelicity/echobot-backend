@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -25,8 +26,11 @@ export class CommentsController {
   }
 
   @Get()
-  async findAll() {
-    return await this.commentsService.findAll();
+  async findAll(
+    @Param('post_id') post_id: string,
+    @Query('page') page: number,
+  ) {
+    return await this.commentsService.findAll(post_id, page, 10);
   }
 
   @Get(':id')

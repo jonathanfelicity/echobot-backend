@@ -28,7 +28,7 @@ export class CronJobsService {
     try {
       // Define the number of users to seed
       const userCount = 500;
-      await this.seederService.seedUsers(userCount);
+      //   await this.seederService.seedUsers(userCount);
       this.logger.debug(
         `User seeding job added to the queue with ${userCount} users.`,
       );

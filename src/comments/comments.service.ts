@@ -74,10 +74,18 @@ export class CommentsService {
    * Fetches all comments from the database.
    * @returns {Promise<Comment[]>} - An array of comments.
    */
-  async findAll(): Promise<Comment[]> {
+  async findAll(post_id: string, page = 1, limit = 10): Promise<Comment[]> {
     try {
       this.logger.log('Fetching all comments');
-      const comments = await this.prisma.comment.findMany();
+      const skip = (page - 1) * limit;
+      const take = limit;
+      const comments = await this.prisma.comment.findMany({
+        where: {
+          post_id,
+        },
+        skip,
+        take,
+      });
       this.logger.log(`Fetched ${comments.length} comments`);
       return comments;
     } catch (error) {

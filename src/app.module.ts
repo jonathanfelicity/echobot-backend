@@ -22,7 +22,7 @@ import { BullModule } from '@nestjs/bullmq';
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: 60,
+        ttl: 10000,
         limit: 5,
       },
     ]),
