@@ -1,18 +1,25 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import FactoryService from '../factory.service';
+import { CommentsService } from 'src/comments/comments.service';
 
 @Injectable()
 export class CommentSeedProcessor {
   private readonly logger = new Logger(CommentSeedProcessor.name);
 
-  constructor(private readonly factoryService: FactoryService) {
+  constructor(
+    private readonly factoryService: FactoryService,
+    private readonly commentsService: CommentsService,
+  ) {
     this.setupWorker();
   }
 
   private setupWorker() {
     const worker = new Worker('comment-seed', this.processJob.bind(this), {
-      connection: { host: 'localhost', port: 6379 }, // Redis configuration
+      connection: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+      },
     });
 
     worker.on('completed', (job: Job) => {
@@ -20,19 +27,27 @@ export class CommentSeedProcessor {
     });
 
     worker.on('failed', (job: Job, err: Error) => {
-      this.logger.error(`Job ${job.id} failed: ${err.message}`);
+      this.logger.error(`Job ${job.id} failed: ${err.message}`, err.stack);
     });
   }
 
   async processJob(job: Job<any>): Promise<void> {
     this.logger.log(`Processing comment seeding job with ID ${job.id}`);
     try {
-      const { count } = job.data;
-      await this.factoryService.generateComments(count);
+      const { count, post_id } = job.data;
+      const comments = await this.factoryService.generateComments(count);
+
+      // Process comments sequentially
+      for (const comment of comments) {
+        await this.commentsService.create({ ...comment, post_id });
+        this.logger.log(`Created comment for post ID ${post_id}`);
+      }
+
       this.logger.log('Comment seeding completed successfully.');
     } catch (error) {
       this.logger.error(
         `Failed to process comment seeding job: ${error.message}`,
+        error.stack,
       );
       throw error;
     }

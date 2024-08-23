@@ -10,7 +10,19 @@ export class CronJobsService {
     this.logger = new Logger(CronJobsService.name);
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  /**
+   * Runs a cron job every hour to seed a specified number of users into the database.
+   *
+   * This method is annotated with the `@Cron` decorator from the `@nestjs/schedule` package,
+   * which schedules it to run on the `CronExpression.EVERY_HOUR` schedule (once per hour).
+   *
+   * When the cron job runs, it logs a debug message, then calls the `seedUsers` method of the
+   * `SeederService` to add the specified number of users to the database. It then logs a
+   * debug message with the number of users that were added.
+   *
+   * If an error occurs during the seeding process, an error log message is written instead.
+   */
+  @Cron(CronExpression.EVERY_WEEK)
   async handleCron() {
     this.logger.debug('Starting user seeding job...');
     try {

@@ -185,29 +185,25 @@ export class UsersService {
       email: user.email,
       phone: user.phone,
       website: user.website,
-      address: user.address
-        ? {
-            create: {
-              street: user.address.street,
-              suite: user.address.suite,
-              city: user.address.city,
-              zipcode: user.address.zipcode,
-              geo: {
-                lat: user.address.geo.lat,
-                lng: user.address.geo.lng,
-              },
-            },
-          }
-        : undefined,
-      company: user.company
-        ? {
-            create: {
-              name: user.company.name,
-              catch_phrase: user.company.catch_phrase,
-              bs: user.company.bs,
-            },
-          }
-        : undefined,
+      address: {
+        create: {
+          street: user.address.street,
+          suite: user.address.suite,
+          city: user.address.city,
+          zipcode: user.address.zipcode,
+          geo: {
+            lat: user.address.geo.lat,
+            lng: user.address.geo.lng,
+          },
+        },
+      },
+      company: {
+        create: {
+          name: user.company.name,
+          catch_phrase: user.company.catch_phrase,
+          bs: user.company.bs,
+        },
+      },
     };
   }
 

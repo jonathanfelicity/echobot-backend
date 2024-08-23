@@ -22,8 +22,8 @@ import { BullModule } from '@nestjs/bullmq';
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: 60000,
-        limit: 10,
+        ttl: 60,
+        limit: 5,
       },
     ]),
     CacheModule.register({

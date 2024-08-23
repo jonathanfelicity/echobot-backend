@@ -27,9 +27,9 @@ export class SeederService {
    *
    * @param count - The number of post records to seed. Defaults to 500 if not provided.
    */
-  async seedPosts(count: number = 500) {
+  async seedPosts(count: number = 10, user_id: string) {
     this.logger.log('Adding post seeding job to the queue...');
-    await this.postQueue.add('post-seed-job', { count });
+    await this.postQueue.add('post-seed-job', { count, user_id });
   }
 
   /**
@@ -37,8 +37,8 @@ export class SeederService {
    *
    * @param count - The number of comment records to seed. Defaults to 500 if not provided.
    */
-  async seedComments(count: number = 500) {
+  async seedComments(count: number = 10, post_id: string) {
     this.logger.log('Adding comment seeding job to the queue...');
-    await this.commentQueue.add('comment-seed-job', { count });
+    await this.commentQueue.add('comment-seed-job', { count, post_id });
   }
 }

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { CacheModule } from '@nestjs/cache-manager';
 import FactoryService from './factory.service';
@@ -9,6 +9,9 @@ import { UserSeedProcessor } from './seeders/user-seed-processor';
 import { PostSeedProcessor } from './seeders/post-seed-processor';
 import { CommentSeedProcessor } from './seeders/comment-seed-processor';
 import { BullModule } from '@nestjs/bullmq';
+import { UsersModule } from 'src/users/users.module';
+import { PostsModule } from 'src/posts/posts.module';
+import { CommentsModule } from 'src/comments/comments.module';
 /**
  * The database module that handles connecting to the database.
  */
@@ -29,6 +32,9 @@ import { BullModule } from '@nestjs/bullmq';
       { name: 'comment-seed' },
     ),
     RequestsModule,
+    forwardRef(() => UsersModule),
+    forwardRef(() => PostsModule),
+    forwardRef(() => CommentsModule),
   ],
   providers: [
     PrismaService,
