@@ -22,13 +22,13 @@ export class CronJobsService {
    *
    * If an error occurs during the seeding process, an error log message is written instead.
    */
-  @Cron(CronExpression.EVERY_WEEK)
+  @Cron(CronExpression.EVERY_HOUR)
   async handleCron() {
     this.logger.debug('Starting user seeding job...');
     try {
       // Define the number of users to seed
       const userCount = 500;
-      //   await this.seederService.seedUsers(userCount);
+      await this.seederService.seedUsers(userCount);
       this.logger.debug(
         `User seeding job added to the queue with ${userCount} users.`,
       );

@@ -47,6 +47,26 @@ export class UsersService {
   }
 
   /**
+   * Returns the total number of users in the database.
+   *
+   * @returns A Promise that resolves to the total number of users.
+   */
+  async getTotalUsers(): Promise<number> {
+    try {
+      this.logger.log('Fetching the total number of users');
+      const totalUsers = await this.prisma.user.count();
+      this.logger.log(`Total users count: ${totalUsers}`);
+      return totalUsers;
+    } catch (error) {
+      this.logger.error(
+        `Failed to get total user count: ${error.message}`,
+        error.stack,
+      );
+      this.handlePrismaError(error, 'getTotalUsers');
+    }
+  }
+
+  /**
    * Creates a new user in the database.
    *
    * @param user - A `CreateUserDto` object containing the data for the new user.

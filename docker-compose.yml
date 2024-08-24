@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - '8081:8081'
+    env_file:
+      - .env
+    depends_on:
+      - db
+    command: ['pnpm', 'start:prod']
+
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: passwd
+      MYSQL_DATABASE: echobot
+      MYSQL_USER: root
+      MYSQL_PASSWORD: passwd
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

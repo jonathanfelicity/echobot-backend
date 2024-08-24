@@ -4,6 +4,7 @@ import FactoryService from '../factory.service';
 import { UsersService } from 'src/users/users.service';
 import { SeederService } from '../seeder.service';
 import { User } from '@prisma/client';
+import { UsersGateway } from 'src/users/users.gateway';
 
 @Injectable()
 export class UserSeedProcessor {
@@ -13,6 +14,7 @@ export class UserSeedProcessor {
     private readonly factoryService: FactoryService,
     private readonly userService: UsersService,
     private readonly seederService: SeederService,
+    private readonly usersGateway: UsersGateway,
   ) {
     this.setupWorker();
   }
@@ -46,6 +48,8 @@ export class UserSeedProcessor {
         this.logger.log(`Created new user: ${newUser.id}`);
 
         // Seed posts only after user is successfully created
+        const total_user = await this.userService.getTotalUsers();
+        this.usersGateway.emitToAll('count-update', total_user);
         await this.seederService.seedPosts(10, newUser.id);
       }
 
